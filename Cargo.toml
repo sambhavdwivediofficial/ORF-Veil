@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/veil-core",
+    "crates/veil-routing",
+    "crates/veil-relay",
+    "crates/veil-sdk",
+    "crates/veil-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Sambhav Dwivedi"]
+license = "MIT"
+repository = "https://github.com/sambhavdwivediofficial/ORF-Veil"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+chacha20poly1305 = "0.10"
+x25519-dalek = "2"
+rand = "0.8"
