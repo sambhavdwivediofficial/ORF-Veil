@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/veil-logo.png" width="220" height="210" />
+  <img src="docs/assets/logo.png" width="220" height="210" />
 </p>
 <p align="center"><b>Hide the conversation. Not just the content.</b></p>
 <p align="center">
