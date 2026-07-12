@@ -1,0 +1,30 @@
+[package]
+name = "veil-relay"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Relay node binary for the Veil oblivious relay fabric."
+
+[lib]
+name = "veil_relay"
+path = "src/lib.rs"
+
+[[bin]]
+name = "veil-relay"
+path = "src/main.rs"
+
+[dependencies]
+veil-core = { path = "../veil-core" }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+toml = "0.8"
+rand = { workspace = true }
+chacha20poly1305 = { workspace = true }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+hkdf = "0.12"
+sha2 = "0.10"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
