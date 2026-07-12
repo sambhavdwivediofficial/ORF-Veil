@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/veil-logo.png" width="140" alt="Veil logo" />
+  <img src="docs/assets/logo.png" width="90" height="90" />
 </p>
 
 <h1 align="center">Veil</h1>
