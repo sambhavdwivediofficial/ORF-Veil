@@ -1,8 +1,7 @@
 <p align="center">
-  <img src="docs/assets/logo.png" width="220" height="210" />
+  <img src="docs/assets/logo.png" width="120" height="110" />
 </p>
 <p align="center"><b>Hide the conversation. Not just the content.</b></p>
-
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-00d4a0?style=for-the-badge" alt="License"></a>
   <img src="https://img.shields.io/badge/Encryption-ChaCha20--Poly1305-0d1b2a?style=for-the-badge&logo=letsencrypt&logoColor=white" alt="Encryption">
