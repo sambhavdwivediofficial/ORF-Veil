@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="docs/assets/logo.png" width="90" height="90" />
+  <img src="docs/assets/logo.png" width="120" height="110" />
 </p>
-
-<h1 align="center">Veil</h1>
 <p align="center"><b>Hide the conversation. Not just the content.</b></p>
 
 <p align="center">
