@@ -1,7 +1,7 @@
 # Build context must be the repository root, e.g.:
 #   docker build -f docker/Dockerfile.relay -t veil-relay .
 
-FROM rust:1.82-slim AS builder
+FROM rust:1.89-slim AS builder
 WORKDIR /build
 
 # Copy the whole workspace: Cargo resolves the full member graph even
