@@ -1,0 +1,20 @@
+[package]
+name = "veil-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Local command-line demonstration harness for the Veil relay fabric."
+
+[[bin]]
+name = "veil-cli"
+path = "src/main.rs"
+
+[dependencies]
+veil-core = { path = "../veil-core" }
+veil-relay = { path = "../veil-relay" }
+veil-routing = { path = "../veil-routing" }
+veil-sdk = { path = "../veil-sdk" }
+rand = { workspace = true }
+tokio = { workspace = true }

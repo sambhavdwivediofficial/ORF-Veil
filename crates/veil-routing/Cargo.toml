@@ -1,0 +1,16 @@
+[package]
+name = "veil-routing"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Path selection, circuit construction, and traffic obfuscation for the Veil relay fabric."
+
+[dependencies]
+veil-core = { path = "../veil-core" }
+veil-relay = { path = "../veil-relay" }
+rand = { workspace = true }
+thiserror = { workspace = true }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+tokio = { workspace = true }

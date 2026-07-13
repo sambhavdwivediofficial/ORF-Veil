@@ -1,0 +1,17 @@
+[package]
+name = "veil-sdk"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Client integration library for applications sending messages over the Veil relay fabric."
+
+[dependencies]
+veil-core = { path = "../veil-core" }
+veil-relay = { path = "../veil-relay" }
+veil-routing = { path = "../veil-routing" }
+rand = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
