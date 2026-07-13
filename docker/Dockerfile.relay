@@ -1,0 +1,24 @@
+# Build context must be the repository root, e.g.:
+#   docker build -f docker/Dockerfile.relay -t veil-relay .
+
+FROM rust:1.82-slim AS builder
+WORKDIR /build
+
+# Copy the whole workspace: Cargo resolves the full member graph even
+# when building a single package, so every crate's manifest must be
+# present, not just veil-relay's.
+COPY . .
+RUN cargo build --release -p veil-relay
+
+FROM debian:bookworm-slim
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /build/target/release/veil-relay /usr/local/bin/veil-relay
+COPY --from=builder /build/crates/veil-relay/config/relay.default.toml /app/config/relay.default.toml
+
+EXPOSE 9001
+ENTRYPOINT ["veil-relay"]
+CMD ["/app/config/relay.default.toml"]
