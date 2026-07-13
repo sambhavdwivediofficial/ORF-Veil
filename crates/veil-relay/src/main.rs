@@ -11,11 +11,14 @@ use veil_relay::node::RelayNode;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
         .init();
 
-    let config_path =
-        env::args().nth(1).unwrap_or_else(|| "config/relay.default.toml".to_string());
+    let config_path = env::args()
+        .nth(1)
+        .unwrap_or_else(|| "config/relay.default.toml".to_string());
     let config = RelayConfig::load(&config_path)?;
 
     let keypair = match &config.static_secret_hex {
@@ -42,7 +45,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // pull these cells out over a proper client protocol.
     tokio::spawn(async move {
         while let Some(delivered) = delivery_rx.recv().await {
-            tracing::info!(bytes = delivered.len(), "cell delivered to local exit point");
+            tracing::info!(
+                bytes = delivered.len(),
+                "cell delivered to local exit point"
+            );
         }
     });
 

@@ -156,9 +156,14 @@ mod unit_tests {
         let bob = KeyPair::generate(&mut rng);
         let mallory = KeyPair::generate(&mut rng);
 
-        let alice_bob = alice.diffie_hellman(&bob.public_key()).derive_key(b"ctx").unwrap();
-        let alice_mallory =
-            alice.diffie_hellman(&mallory.public_key()).derive_key(b"ctx").unwrap();
+        let alice_bob = alice
+            .diffie_hellman(&bob.public_key())
+            .derive_key(b"ctx")
+            .unwrap();
+        let alice_mallory = alice
+            .diffie_hellman(&mallory.public_key())
+            .derive_key(b"ctx")
+            .unwrap();
 
         assert_ne!(alice_bob, alice_mallory);
     }
@@ -171,7 +176,10 @@ mod unit_tests {
 
         let restored = KeyPair::from_hex(&hex).unwrap();
 
-        assert_eq!(original.public_key().as_bytes(), restored.public_key().as_bytes());
+        assert_eq!(
+            original.public_key().as_bytes(),
+            restored.public_key().as_bytes()
+        );
     }
 
     #[test]
@@ -182,10 +190,19 @@ mod unit_tests {
         let hex = original.to_hex();
         let restored = KeyPair::from_hex(&hex).unwrap();
 
-        let key_original = original.diffie_hellman(&peer.public_key()).derive_key(b"ctx").unwrap();
-        let key_restored = restored.diffie_hellman(&peer.public_key()).derive_key(b"ctx").unwrap();
+        let key_original = original
+            .diffie_hellman(&peer.public_key())
+            .derive_key(b"ctx")
+            .unwrap();
+        let key_restored = restored
+            .diffie_hellman(&peer.public_key())
+            .derive_key(b"ctx")
+            .unwrap();
 
-        assert_eq!(key_original, key_restored, "a restored identity must behave identically to the original");
+        assert_eq!(
+            key_original, key_restored,
+            "a restored identity must behave identically to the original"
+        );
     }
 
     #[test]
