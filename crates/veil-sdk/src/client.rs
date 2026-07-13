@@ -38,7 +38,10 @@ pub struct VeilClient {
 
 impl VeilClient {
     pub fn new(topology: Topology, hop_count: usize) -> Self {
-        Self { topology, hop_count }
+        Self {
+            topology,
+            hop_count,
+        }
     }
 
     /// Fragments `message` into cells, encrypts each cell end-to-end
@@ -46,7 +49,11 @@ impl VeilClient {
     /// through a freshly chosen path — so no single relay, and no
     /// external observer, can link the fragments of one message back
     /// together by path alone.
-    pub async fn send(&self, session: &Session, message: &[u8]) -> Result<Vec<SentCircuit>, ClientError> {
+    pub async fn send(
+        &self,
+        session: &Session,
+        message: &[u8],
+    ) -> Result<Vec<SentCircuit>, ClientError> {
         let mut rng = OsRng;
         let cells = fragment_message(message, &mut rng)?;
         let mut sent = Vec::with_capacity(cells.len());

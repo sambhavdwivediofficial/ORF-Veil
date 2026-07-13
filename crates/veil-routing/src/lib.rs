@@ -29,13 +29,25 @@ pub enum CircuitError {
 pub fn build_circuit(path: &[&RelayInfo], final_body: Vec<u8>) -> Result<Vec<u8>, CircuitError> {
     let (exit, inner_hops) = path.split_last().ok_or(CircuitError::EmptyPath)?;
 
-    let mut layer = build_onion_layer(&exit.public_key, &OnionPayload::Deliver { body: final_body })?;
+    let mut layer = build_onion_layer(
+        &exit.public_key,
+        &OnionPayload::Deliver { body: final_body },
+    )?;
 
     for i in (0..inner_hops.len()).rev() {
         let hop = inner_hops[i];
-        let next_hop_addr =
-            if i + 1 < inner_hops.len() { inner_hops[i + 1].address.clone() } else { exit.address.clone() };
-        layer = build_onion_layer(&hop.public_key, &OnionPayload::Forward { next_hop: next_hop_addr, body: layer })?;
+        let next_hop_addr = if i + 1 < inner_hops.len() {
+            inner_hops[i + 1].address.clone()
+        } else {
+            exit.address.clone()
+        };
+        layer = build_onion_layer(
+            &hop.public_key,
+            &OnionPayload::Forward {
+                next_hop: next_hop_addr,
+                body: layer,
+            },
+        )?;
     }
 
     Ok(layer)

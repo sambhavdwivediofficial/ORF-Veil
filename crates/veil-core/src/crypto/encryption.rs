@@ -114,6 +114,9 @@ mod unit_tests {
         let first = encrypt_cell(&key, &cell).unwrap();
         let second = encrypt_cell(&key, &cell).unwrap();
 
-        assert_ne!(first, second, "nonces must differ, so ciphertexts must differ");
+        assert_ne!(
+            first, second,
+            "nonces must differ, so ciphertexts must differ"
+        );
     }
 }

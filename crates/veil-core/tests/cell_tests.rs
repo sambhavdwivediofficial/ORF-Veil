@@ -8,8 +8,7 @@ use veil_core::{fragment_message, Cell, Reassembler};
 
 #[test]
 fn fragment_and_reassemble_roundtrip() {
-    let message = b"The quick brown fox jumps over the lazy dog, repeated for length. "
-        .repeat(20);
+    let message = b"The quick brown fox jumps over the lazy dog, repeated for length. ".repeat(20);
 
     let mut rng = OsRng;
     let cells = fragment_message(&message, &mut rng).expect("fragmentation should succeed");
@@ -28,8 +27,7 @@ fn fragment_and_reassemble_roundtrip() {
 
 #[test]
 fn reassembly_handles_out_of_order_cells() {
-    let message =
-        b"out of order delivery test payload spanning several cells of data".repeat(30);
+    let message = b"out of order delivery test payload spanning several cells of data".repeat(30);
     let mut rng = OsRng;
     let mut cells = fragment_message(&message, &mut rng).unwrap();
 
@@ -56,7 +54,9 @@ fn single_cell_message_roundtrip() {
     assert_eq!(cells.len(), 1);
 
     let mut reassembler = Reassembler::new();
-    let result = reassembler.insert(cells.into_iter().next().unwrap()).unwrap();
+    let result = reassembler
+        .insert(cells.into_iter().next().unwrap())
+        .unwrap();
     assert_eq!(result.unwrap(), message);
 }
 

@@ -90,7 +90,10 @@ impl Cell {
             });
         }
         if seq_total == 0 || seq_index >= seq_total {
-            return Err(VeilError::InvalidSequence { seq_index, seq_total });
+            return Err(VeilError::InvalidSequence {
+                seq_index,
+                seq_total,
+            });
         }
 
         let mut payload = [0u8; PAYLOAD_CAPACITY];
@@ -194,7 +197,10 @@ impl Cell {
             });
         }
         if seq_total == 0 || seq_index >= seq_total {
-            return Err(VeilError::InvalidSequence { seq_index, seq_total });
+            return Err(VeilError::InvalidSequence {
+                seq_index,
+                seq_total,
+            });
         }
 
         let mut payload = [0u8; PAYLOAD_CAPACITY];

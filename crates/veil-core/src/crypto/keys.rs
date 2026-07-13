@@ -130,9 +130,14 @@ mod unit_tests {
         let bob = KeyPair::generate(&mut rng);
         let mallory = KeyPair::generate(&mut rng);
 
-        let alice_bob = alice.diffie_hellman(&bob.public_key()).derive_key(b"ctx").unwrap();
-        let alice_mallory =
-            alice.diffie_hellman(&mallory.public_key()).derive_key(b"ctx").unwrap();
+        let alice_bob = alice
+            .diffie_hellman(&bob.public_key())
+            .derive_key(b"ctx")
+            .unwrap();
+        let alice_mallory = alice
+            .diffie_hellman(&mallory.public_key())
+            .derive_key(b"ctx")
+            .unwrap();
 
         assert_ne!(alice_bob, alice_mallory);
     }

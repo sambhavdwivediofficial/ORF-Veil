@@ -18,7 +18,9 @@ pub struct Topology {
 
 impl Topology {
     pub fn new() -> Self {
-        Self { relays: HashMap::new() }
+        Self {
+            relays: HashMap::new(),
+        }
     }
 
     pub fn add_relay(&mut self, relay: RelayInfo) {

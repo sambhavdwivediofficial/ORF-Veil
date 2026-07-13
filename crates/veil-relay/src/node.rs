@@ -73,8 +73,8 @@ impl RelayNode {
         mut stream: TcpStream,
         peer: SocketAddr,
     ) -> Result<(), RelayError> {
-        use tokio::io::AsyncReadExt;
         use std::sync::atomic::Ordering::Relaxed;
+        use tokio::io::AsyncReadExt;
 
         loop {
             let mut len_buf = [0u8; 4];

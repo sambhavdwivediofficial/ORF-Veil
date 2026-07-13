@@ -5,10 +5,10 @@
 use std::time::Duration;
 
 use rand::rngs::OsRng;
+use veil_core::crypto::KeyPair;
 use veil_relay::config::RelayConfig;
 use veil_relay::forwarding::{build_onion_layer, write_frame, OnionPayload};
 use veil_relay::node::RelayNode;
-use veil_core::crypto::KeyPair;
 
 #[tokio::main]
 async fn main() {
@@ -42,19 +42,28 @@ async fn main() {
     let final_cell = b"this is the real message payload".to_vec();
     let layer_for_relay2 = build_onion_layer(
         &relay2_pubkey,
-        &OnionPayload::Deliver { body: final_cell.clone() },
+        &OnionPayload::Deliver {
+            body: final_cell.clone(),
+        },
     )
     .unwrap();
 
     let layer_for_relay1 = build_onion_layer(
         &relay1_pubkey,
-        &OnionPayload::Forward { next_hop: "127.0.0.1:19002".into(), body: layer_for_relay2 },
+        &OnionPayload::Forward {
+            next_hop: "127.0.0.1:19002".into(),
+            body: layer_for_relay2,
+        },
     )
     .unwrap();
 
     // Client sends the outermost layer to relay 1 only.
-    let mut client_stream = tokio::net::TcpStream::connect("127.0.0.1:19001").await.unwrap();
-    write_frame(&mut client_stream, &layer_for_relay1).await.unwrap();
+    let mut client_stream = tokio::net::TcpStream::connect("127.0.0.1:19001")
+        .await
+        .unwrap();
+    write_frame(&mut client_stream, &layer_for_relay1)
+        .await
+        .unwrap();
 
     // Relay 1 should peel its layer, see "forward to relay 2", and
     // relay 1 never sees final_cell in plaintext — relay 2 does, and
@@ -65,5 +74,7 @@ async fn main() {
         .expect("delivery channel closed");
 
     assert_eq!(delivered, final_cell);
-    println!("SUCCESS: cell traveled client -> relay-1 -> relay-2 -> delivered, exactly as designed");
+    println!(
+        "SUCCESS: cell traveled client -> relay-1 -> relay-2 -> delivered, exactly as designed"
+    );
 }

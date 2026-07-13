@@ -27,7 +27,10 @@ pub fn fragment_message(
     rng: &mut (impl RngCore + CryptoRng),
 ) -> VeilResult<Vec<Cell>> {
     if message.is_empty() {
-        return Err(VeilError::MessageTooLarge { len: 0, max: MAX_MESSAGE_SIZE });
+        return Err(VeilError::MessageTooLarge {
+            len: 0,
+            max: MAX_MESSAGE_SIZE,
+        });
     }
     if message.len() > MAX_MESSAGE_SIZE {
         return Err(VeilError::MessageTooLarge {

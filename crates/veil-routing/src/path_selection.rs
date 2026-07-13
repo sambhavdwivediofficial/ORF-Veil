@@ -80,6 +80,9 @@ mod unit_tests {
         let topo = topology_with(2);
         let mut rng = OsRng;
         let result = select_path(&topo, 5, &mut rng);
-        assert!(matches!(result, Err(PathSelectionError::InsufficientRelays { .. })));
+        assert!(matches!(
+            result,
+            Err(PathSelectionError::InsufficientRelays { .. })
+        ));
     }
 }

@@ -27,8 +27,9 @@ async fn spin_up_relays(
     let mut deliveries = HashMap::new();
 
     for i in 0..count {
-        let addr: std::net::SocketAddr =
-            format!("127.0.0.1:{}", base_port + i as u16).parse().unwrap();
+        let addr: std::net::SocketAddr = format!("127.0.0.1:{}", base_port + i as u16)
+            .parse()
+            .unwrap();
         let relay_id = format!("relay-{i}");
 
         let keypair = KeyPair::generate(&mut OsRng);
@@ -44,7 +45,11 @@ async fn spin_up_relays(
         tokio::spawn(node.run());
 
         deliveries.insert(relay_id.clone(), delivery_rx);
-        topology.add_relay(RelayInfo { id: relay_id, address: addr.to_string(), public_key });
+        topology.add_relay(RelayInfo {
+            id: relay_id,
+            address: addr.to_string(),
+            public_key,
+        });
     }
 
     tokio::time::sleep(Duration::from_millis(200)).await;
@@ -59,7 +64,10 @@ async fn message_delivered_correctly_through_three_hop_circuit() {
     let session = Session::establish(&recipient.public_key()).unwrap();
 
     let client = VeilClient::new(topology, 3);
-    let sent = client.send(&session, b"integration test payload").await.unwrap();
+    let sent = client
+        .send(&session, b"integration test payload")
+        .await
+        .unwrap();
     assert_eq!(sent.len(), 1, "short message should fit in a single cell");
 
     let exit_rx = deliveries.get_mut(&sent[0].exit_relay_id).unwrap();
@@ -85,7 +93,10 @@ async fn wrong_recipient_key_cannot_read_the_delivered_cell() {
     let session = Session::establish(&real_recipient.public_key()).unwrap();
 
     let client = VeilClient::new(topology, 3);
-    let sent = client.send(&session, b"only the real recipient should read this").await.unwrap();
+    let sent = client
+        .send(&session, b"only the real recipient should read this")
+        .await
+        .unwrap();
 
     let exit_rx = deliveries.get_mut(&sent[0].exit_relay_id).unwrap();
     let delivered = tokio::time::timeout(Duration::from_secs(3), exit_rx.recv())
@@ -111,14 +122,19 @@ async fn concurrent_sends_all_arrive_intact() {
     let session = Arc::new(Session::establish(&recipient.public_key()).unwrap());
     let client = Arc::new(VeilClient::new(topology, 3));
 
-    let messages =
-        ["first concurrent message", "second concurrent message", "third concurrent message"];
+    let messages = [
+        "first concurrent message",
+        "second concurrent message",
+        "third concurrent message",
+    ];
 
     let mut handles = Vec::new();
     for msg in messages {
         let client = client.clone();
         let session = session.clone();
-        handles.push(tokio::spawn(async move { client.send(&session, msg.as_bytes()).await.unwrap() }));
+        handles.push(tokio::spawn(async move {
+            client.send(&session, msg.as_bytes()).await.unwrap()
+        }));
     }
 
     let mut exit_ids = Vec::new();
@@ -142,6 +158,9 @@ async fn concurrent_sends_all_arrive_intact() {
     }
 
     for msg in messages {
-        assert!(received.iter().any(|r| r == msg), "message {msg:?} was not delivered");
+        assert!(
+            received.iter().any(|r| r == msg),
+            "message {msg:?} was not delivered"
+        );
     }
 }

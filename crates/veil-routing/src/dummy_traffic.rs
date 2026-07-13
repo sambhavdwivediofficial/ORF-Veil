@@ -17,13 +17,20 @@ pub struct DummyTrafficGenerator {
 
 impl DummyTrafficGenerator {
     pub fn new(min_interval: Duration, max_interval: Duration) -> Self {
-        Self { min_interval, max_interval }
+        Self {
+            min_interval,
+            max_interval,
+        }
     }
 
     /// Waits a randomized interval within `[min_interval, max_interval)`,
     /// then returns a dummy cell ready to send.
     pub async fn next_dummy(&self, rng: &mut (impl RngCore + CryptoRng)) -> Cell {
-        let span = self.max_interval.saturating_sub(self.min_interval).as_millis().max(1) as u64;
+        let span = self
+            .max_interval
+            .saturating_sub(self.min_interval)
+            .as_millis()
+            .max(1) as u64;
         let jitter = rng.next_u64() % span;
         time::sleep(self.min_interval + Duration::from_millis(jitter)).await;
         Cell::new_dummy(rng)
@@ -37,7 +44,8 @@ mod unit_tests {
 
     #[tokio::test]
     async fn emits_a_dummy_cell_within_bounds() {
-        let generator = DummyTrafficGenerator::new(Duration::from_millis(1), Duration::from_millis(5));
+        let generator =
+            DummyTrafficGenerator::new(Duration::from_millis(1), Duration::from_millis(5));
         let mut rng = OsRng;
 
         let start = tokio::time::Instant::now();

@@ -29,8 +29,9 @@ fn default_max_connections() -> usize {
 
 impl RelayConfig {
     pub fn load(path: impl AsRef<Path>) -> Result<Self, RelayError> {
-        let raw = std::fs::read_to_string(path.as_ref())
-            .map_err(|e| RelayError::Config(format!("cannot read {}: {e}", path.as_ref().display())))?;
+        let raw = std::fs::read_to_string(path.as_ref()).map_err(|e| {
+            RelayError::Config(format!("cannot read {}: {e}", path.as_ref().display()))
+        })?;
         toml::from_str(&raw).map_err(|e| RelayError::Config(format!("invalid config: {e}")))
     }
 }

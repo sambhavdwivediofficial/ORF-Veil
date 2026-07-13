@@ -26,7 +26,9 @@ struct PartialMessage {
 
 impl Reassembler {
     pub fn new() -> Self {
-        Self { in_flight: HashMap::new() }
+        Self {
+            in_flight: HashMap::new(),
+        }
     }
 
     /// Feed a single received cell into the reassembler.
@@ -60,7 +62,10 @@ impl Reassembler {
         }
 
         if entry.received == entry.seq_total as usize {
-            let partial = self.in_flight.remove(&id).expect("entry was just accessed above");
+            let partial = self
+                .in_flight
+                .remove(&id)
+                .expect("entry was just accessed above");
             let mut message = Vec::new();
             for fragment in partial.fragments {
                 message.extend_from_slice(&fragment.expect("all fragments verified present"));
@@ -137,7 +142,9 @@ mod unit_tests {
     fn evict_removes_pending_message() {
         let id = [6u8; 16];
         let mut reassembler = Reassembler::new();
-        reassembler.insert(Cell::new_data(id, 0, 2, b"a").unwrap()).unwrap();
+        reassembler
+            .insert(Cell::new_data(id, 0, 2, b"a").unwrap())
+            .unwrap();
         assert_eq!(reassembler.pending_count(), 1);
         reassembler.evict(&id);
         assert_eq!(reassembler.pending_count(), 0);

@@ -85,7 +85,9 @@ pub fn peel_onion_layer(keypair: &KeyPair, frame: &[u8]) -> Result<OnionPayload,
     let ephemeral_public = PublicKey::from(ephemeral_bytes);
 
     let shared = keypair.diffie_hellman(&ephemeral_public);
-    let key = shared.derive_key(ONION_KEY_CONTEXT).map_err(|_| OnionError::KeyDerivation)?;
+    let key = shared
+        .derive_key(ONION_KEY_CONTEXT)
+        .map_err(|_| OnionError::KeyDerivation)?;
 
     let nonce = Nonce::from_slice(&frame[EPHEMERAL_KEY_SIZE..EPHEMERAL_KEY_SIZE + NONCE_SIZE]);
     let ciphertext = &frame[EPHEMERAL_KEY_SIZE + NONCE_SIZE..];
@@ -105,7 +107,8 @@ pub fn peel_onion_layer(keypair: &KeyPair, frame: &[u8]) -> Result<OnionPayload,
 fn derive_key_from_bytes(shared_secret: &[u8; 32]) -> Result<[u8; 32], OnionError> {
     let hk = Hkdf::<Sha256>::new(None, shared_secret);
     let mut okm = [0u8; 32];
-    hk.expand(ONION_KEY_CONTEXT, &mut okm).map_err(|_| OnionError::KeyDerivation)?;
+    hk.expand(ONION_KEY_CONTEXT, &mut okm)
+        .map_err(|_| OnionError::KeyDerivation)?;
     Ok(okm)
 }
 
@@ -146,7 +149,9 @@ fn decode_payload(bytes: &[u8]) -> Result<OnionPayload, OnionError> {
             let body = rest[hop_len..].to_vec();
             Ok(OnionPayload::Forward { next_hop, body })
         }
-        1 => Ok(OnionPayload::Deliver { body: rest.to_vec() }),
+        1 => Ok(OnionPayload::Deliver {
+            body: rest.to_vec(),
+        }),
         _ => Err(OnionError::Malformed),
     }
 }
@@ -201,7 +206,9 @@ mod unit_tests {
         let mut rng = StdOsRng;
         let relay = KeyPair::generate(&mut rng);
 
-        let payload = OnionPayload::Deliver { body: b"final cell bytes".to_vec() };
+        let payload = OnionPayload::Deliver {
+            body: b"final cell bytes".to_vec(),
+        };
         let frame = build_onion_layer(&relay.public_key(), &payload).unwrap();
         let peeled = peel_onion_layer(&relay, &frame).unwrap();
 
@@ -217,7 +224,9 @@ mod unit_tests {
         let relay = KeyPair::generate(&mut rng);
         let attacker = KeyPair::generate(&mut rng);
 
-        let payload = OnionPayload::Deliver { body: b"secret".to_vec() };
+        let payload = OnionPayload::Deliver {
+            body: b"secret".to_vec(),
+        };
         let frame = build_onion_layer(&relay.public_key(), &payload).unwrap();
 
         assert!(peel_onion_layer(&attacker, &frame).is_err());
