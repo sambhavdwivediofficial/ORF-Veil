@@ -5,4 +5,4 @@ pub mod encryption;
 pub mod keys;
 
 pub use encryption::{decrypt_cell, encrypt_cell, ENCRYPTED_CELL_SIZE, NONCE_SIZE, TAG_SIZE};
-pub use keys::{public_key_from_bytes, KeyPair, SharedSecret};
+pub use keys::{public_key_from_bytes, public_key_to_hex, KeyPair, SharedSecret};

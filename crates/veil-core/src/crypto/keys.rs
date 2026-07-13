@@ -1,5 +1,3 @@
-//! X25519 key exchange and key derivation.
-
 use hkdf::Hkdf;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha256;
@@ -51,6 +49,28 @@ impl KeyPair {
     pub fn diffie_hellman(&self, peer_public: &PublicKey) -> SharedSecret {
         SharedSecret(self.secret.diffie_hellman(peer_public).to_bytes())
     }
+
+    /// Serialize this keypair's private key as lowercase hex, so a
+    /// relay's identity can be persisted to config and survive a
+    /// restart — without this, a restarted relay is a different
+    /// cryptographic identity every time, which breaks any topology
+    /// that references it by public key.
+    pub fn to_hex(&self) -> String {
+        hex::encode(self.secret.to_bytes())
+    }
+
+    /// Reconstruct a keypair from a hex string produced by
+    /// [`KeyPair::to_hex`].
+    pub fn from_hex(hex_str: &str) -> VeilResult<Self> {
+        let bytes = hex::decode(hex_str.trim())
+            .map_err(|_| VeilError::InvalidKey("secret key is not valid hex"))?;
+        let array: [u8; 32] = bytes
+            .try_into()
+            .map_err(|_| VeilError::InvalidKey("secret key must decode to exactly 32 bytes"))?;
+        let secret = StaticSecret::from(array);
+        let public = PublicKey::from(&secret);
+        Ok(Self { secret, public })
+    }
 }
 
 /// A raw 32-byte shared secret produced by a Diffie-Hellman exchange.
@@ -88,6 +108,12 @@ impl Drop for SharedSecret {
 /// received from a peer.
 pub fn public_key_from_bytes(bytes: [u8; 32]) -> PublicKey {
     PublicKey::from(bytes)
+}
+
+/// Render a public key as lowercase hex, for display or for sharing
+/// with clients building a `Topology`.
+pub fn public_key_to_hex(public: &PublicKey) -> String {
+    hex::encode(public.as_bytes())
 }
 
 #[cfg(test)]
@@ -130,15 +156,45 @@ mod unit_tests {
         let bob = KeyPair::generate(&mut rng);
         let mallory = KeyPair::generate(&mut rng);
 
-        let alice_bob = alice
-            .diffie_hellman(&bob.public_key())
-            .derive_key(b"ctx")
-            .unwrap();
-        let alice_mallory = alice
-            .diffie_hellman(&mallory.public_key())
-            .derive_key(b"ctx")
-            .unwrap();
+        let alice_bob = alice.diffie_hellman(&bob.public_key()).derive_key(b"ctx").unwrap();
+        let alice_mallory =
+            alice.diffie_hellman(&mallory.public_key()).derive_key(b"ctx").unwrap();
 
         assert_ne!(alice_bob, alice_mallory);
+    }
+
+    #[test]
+    fn hex_roundtrip_preserves_the_same_identity() {
+        let mut rng = OsRng;
+        let original = KeyPair::generate(&mut rng);
+        let hex = original.to_hex();
+
+        let restored = KeyPair::from_hex(&hex).unwrap();
+
+        assert_eq!(original.public_key().as_bytes(), restored.public_key().as_bytes());
+    }
+
+    #[test]
+    fn restored_keypair_derives_identical_shared_secrets() {
+        let mut rng = OsRng;
+        let original = KeyPair::generate(&mut rng);
+        let peer = KeyPair::generate(&mut rng);
+        let hex = original.to_hex();
+        let restored = KeyPair::from_hex(&hex).unwrap();
+
+        let key_original = original.diffie_hellman(&peer.public_key()).derive_key(b"ctx").unwrap();
+        let key_restored = restored.diffie_hellman(&peer.public_key()).derive_key(b"ctx").unwrap();
+
+        assert_eq!(key_original, key_restored, "a restored identity must behave identically to the original");
+    }
+
+    #[test]
+    fn invalid_hex_is_rejected() {
+        assert!(KeyPair::from_hex("this is not hex").is_err());
+    }
+
+    #[test]
+    fn wrong_length_hex_is_rejected() {
+        assert!(KeyPair::from_hex("aabbcc").is_err());
     }
 }
