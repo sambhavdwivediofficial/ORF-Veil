@@ -19,10 +19,10 @@ use x25519_dalek::PublicKey;
 
 use veil_core::crypto::encrypt_cell;
 use veil_relay::forwarding::write_frame;
+use veil_routing::build_circuit;
 use veil_routing::dummy_traffic::DummyTrafficGenerator;
 use veil_routing::path_selection::select_path;
 use veil_routing::topology::Topology;
-use veil_routing::build_circuit;
 
 use crate::envelope;
 
@@ -48,14 +48,20 @@ pub fn spawn(
 
             let mut throwaway_key = [0u8; 32];
             rng.fill_bytes(&mut throwaway_key);
-            let Ok(encrypted) = encrypt_cell(&throwaway_key, &dummy_cell) else { continue };
+            let Ok(encrypted) = encrypt_cell(&throwaway_key, &dummy_cell) else {
+                continue;
+            };
 
             let mut fake_sender_bytes = [0u8; 32];
             rng.fill_bytes(&mut fake_sender_bytes);
             let enveloped = envelope::wrap(&PublicKey::from(fake_sender_bytes), &encrypted);
 
-            let Ok(path) = select_path(&topology, hop_count, &mut rng) else { continue };
-            let Ok(onion) = build_circuit(&path, enveloped.to_vec()) else { continue };
+            let Ok(path) = select_path(&topology, hop_count, &mut rng) else {
+                continue;
+            };
+            let Ok(onion) = build_circuit(&path, enveloped.to_vec()) else {
+                continue;
+            };
 
             if let Ok(mut stream) = TcpStream::connect(&path[0].address).await {
                 let _ = write_frame(&mut stream, &onion).await;
@@ -88,12 +94,21 @@ mod unit_tests {
         tokio::spawn(node.run());
 
         let mut topology = Topology::new();
-        topology.add_relay(RelayInfo { id: "cover-relay".to_string(), address: addr.to_string(), public_key });
+        topology.add_relay(RelayInfo {
+            id: "cover-relay".to_string(),
+            address: addr.to_string(),
+            public_key,
+        });
         tokio::time::sleep(Duration::from_millis(200)).await;
 
         // Single relay, hop_count = 1: it is deterministically the
         // exit relay, so this test is not flaky by construction.
-        let handle = spawn(Arc::new(topology), 1, Duration::from_millis(10), Duration::from_millis(30));
+        let handle = spawn(
+            Arc::new(topology),
+            1,
+            Duration::from_millis(10),
+            Duration::from_millis(30),
+        );
 
         let delivered = tokio::time::timeout(Duration::from_secs(3), delivery_rx.recv())
             .await
