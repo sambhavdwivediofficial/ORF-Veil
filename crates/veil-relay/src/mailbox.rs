@@ -22,7 +22,9 @@ pub struct Mailbox {
 
 impl Mailbox {
     pub fn new() -> Self {
-        Self { queue: Arc::new(Mutex::new(VecDeque::new())) }
+        Self {
+            queue: Arc::new(Mutex::new(VecDeque::new())),
+        }
     }
 
     /// Add a delivered cell to the mailbox.

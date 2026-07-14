@@ -6,7 +6,9 @@ use tracing_subscriber::EnvFilter;
 
 use veil_core::crypto::KeyPair;
 use veil_relay::config::RelayConfig;
+use veil_relay::mailbox::Mailbox;
 use veil_relay::node::RelayNode;
+use veil_relay::pull_listener;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,6 +31,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    // Mailbox pull listener runs on listen_addr's port + 1000 by
+    // convention (see pull_listener.rs) — computed before config is
+    // moved into RelayNode::new below.
+    let mut mailbox_addr = config.listen_addr;
+    mailbox_addr.set_port(mailbox_addr.port() + 1000);
+
     let (node, mut delivery_rx) = RelayNode::new(config, keypair);
 
     let metrics_node = node.clone();
@@ -41,14 +49,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // Exit-point delivery is a bare log line until `veil-sdk` exists to
-    // pull these cells out over a proper client protocol.
+    let mailbox = Mailbox::new();
+
+    let listener_mailbox = mailbox.clone();
+    tokio::spawn(async move {
+        if let Err(e) = pull_listener::serve(mailbox_addr, listener_mailbox).await {
+            tracing::error!(error = %e, "mailbox pull listener stopped");
+        }
+    });
+    tracing::info!(addr = %mailbox_addr, "receiving clients can pull deliveries from this address");
+
+    // Every cell this relay delivers as a circuit's exit point is
+    // queued in the mailbox, where a receiving client can pull it
+    // over the network via `pull_listener`.
     tokio::spawn(async move {
         while let Some(delivered) = delivery_rx.recv().await {
             tracing::info!(
                 bytes = delivered.len(),
-                "cell delivered to local exit point"
+                "cell delivered to local exit point, queued in mailbox"
             );
+            mailbox.push(delivered).await;
         }
     });
 

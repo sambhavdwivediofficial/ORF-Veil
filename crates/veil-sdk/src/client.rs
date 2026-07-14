@@ -12,6 +12,7 @@ use veil_routing::path_selection::select_path;
 use veil_routing::topology::Topology;
 use veil_routing::{build_circuit, CircuitError};
 
+use crate::envelope;
 use crate::session::Session;
 
 #[derive(Debug, Error)]
@@ -45,10 +46,13 @@ impl VeilClient {
     }
 
     /// Fragments `message` into cells, encrypts each cell end-to-end
-    /// under `session`'s key, and routes every cell independently
-    /// through a freshly chosen path — so no single relay, and no
-    /// external observer, can link the fragments of one message back
-    /// together by path alone.
+    /// under `session`'s key, wraps each in an envelope carrying the
+    /// sender's ephemeral public key (so a genuinely separate
+    /// recipient process can later derive the same key — see
+    /// `envelope.rs`), and routes every cell independently through a
+    /// freshly chosen path — so no single relay, and no external
+    /// observer, can link the fragments of one message back together
+    /// by path alone.
     pub async fn send(
         &self,
         session: &Session,
@@ -60,10 +64,11 @@ impl VeilClient {
 
         for cell in cells {
             let encrypted = encrypt_cell(&session.cell_key, &cell)?;
+            let enveloped = envelope::wrap(&session.public_key(), &encrypted);
 
             let path = select_path(&self.topology, self.hop_count, &mut rng)
                 .map_err(CircuitError::PathSelection)?;
-            let onion = build_circuit(&path, encrypted.to_vec())?;
+            let onion = build_circuit(&path, enveloped.to_vec())?;
 
             let first_hop_addr = path[0].address.clone();
             let exit_relay_id = path.last().unwrap().id.clone();
