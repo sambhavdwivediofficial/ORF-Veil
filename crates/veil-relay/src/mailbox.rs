@@ -43,6 +43,10 @@ impl Mailbox {
     pub async fn len(&self) -> usize {
         self.queue.lock().await.len()
     }
+
+    pub async fn is_empty(&self) -> bool {
+        self.queue.lock().await.is_empty()
+    }
 }
 
 #[cfg(test)]
