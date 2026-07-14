@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://sambhavdwivedi.in">Website</a> •
+  <a href="https://www.sambhavdwivedi.in">Website</a> •
   <a href="https://www.linkedin.com/in/sambhavdwivedi">LinkedIn</a> •
   <a href="../../issues">Report a Bug</a>
 </p>
@@ -41,25 +41,25 @@ Veil does not replace end-to-end encryption. It sits underneath it, protecting t
 
 ## How It Works
 
-```
-   Sender (A)                     ORF Relay Fabric                    Receiver (B)
-       │                                                                    │
-       ▼                                                                    │
- ┌───────────┐      ┌─────────────────────────────────────────┐            │
- │  Message  │      │                                         │            │
- └─────┬─────┘      │   Relay 1        Relay 2        Relay N │            │
-       ▼            │  ┌───────┐     ┌───────┐      ┌───────┐ │            │
- Fragment into       │  │ knows │     │ knows │ ...  │ knows │ │            │
- fixed-size cells ──▶│  │ only  │────▶│ only  │─────▶│ only  │ │───────────▶│
-       │             │  │ prev/ │     │ prev/ │      │ prev/ │ │  Reassemble
-       ▼             │  │ next  │     │ next  │      │ next  │ │  + Decrypt
- Encrypt each cell   │  │  hop  │     │  hop  │      │  hop  │ │            │
- (ChaCha20-Poly1305) │  └───────┘     └───────┘      └───────┘ │            │
-       │             │                                         │            │
-       │             │        + Dummy cells injected            │           │
-       │             │        + Randomized per-cell routing     │           │
-       │             │        + Randomized timing               │           │
-       └────────────▶└─────────────────────────────────────────┘            
+```  
+   Sender (A)                         ORF Relay Fabric                           Receiver (B)
+       │                                                                             │
+       ▼                                                                             │
+ ┌───────────┐        ┌────────────────────────────────────────────┐                 │
+ │  Message  │        │                                            │                 │
+ └─────┬─────┘        │   Relay 1          Relay 2           Relay N   │             │
+       ▼              │  ┌───────┐        ┌───────┐         ┌───────┐  │             │
+ Fragment into        │  │ knows │        │ knows │         │ knows │  │             │
+ fixed-size cells ──▶│  │ only   │ ────▶ │ only  │ ─────▶ │ only  │  │───────────▶ |
+       │              │  │ prev/ │        │ prev/ │         │ prev/ │  │  Reassemble
+       ▼              │  │ next  │        │ next  │         │ next  │  │  + Decrypt
+ Encrypt each cell    │  │  hop  │        │  hop  │         │  hop  │  │
+ (ChaCha20-Poly1305)  │  └───────┘        └───────┘         └───────┘  │            
+       │              │                                            │            
+       │              │        + Dummy cells injected              │           
+       │              │        + Randomized per-cell routing       │           
+       │              │        + Randomized timing                 │           
+       └────────────▶ └───────────────────────────────────────────┘            
 ```
 
 Every cell that leaves a relay node is cryptographically and structurally identical to every other cell on the network, whether it carries real data or is pure cover traffic. An observer with a complete view of every relay — the strongest possible adversary — sees only a uniform stream of encrypted, uniformly-sized packets with no discernible source, destination, or pattern.
@@ -106,17 +106,6 @@ Progress is tracked in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
-## Getting Started
-
-```bash
-git clone https://github.com/sambhavdwivediofficial/ORF-Veil.git
-cd ORF-Veil
-cargo build
-cargo test
-```
-
----
-
 ## What Veil Does Not Do
 
 Veil is not a chat application, does not store messages, does not provide backup or recovery, and does not claim compliance with any regulatory standard. It is a transport-layer privacy primitive, intended to be integrated beneath applications — not a consumer product on its own.
@@ -129,7 +118,7 @@ Licensed under the [MIT License](LICENSE) © 2026 Sambhav Dwivedi.
 
 <p align="center">
   <a href="https://www.linkedin.com/in/sambhavdwivedi"><img src="https://img.shields.io/badge/LinkedIn-Sambhav%20Dwivedi-0A66C2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
-  <a href="https://sambhavdwivedi.in"><img src="https://img.shields.io/badge/Author-Sambhav%20Dwivedi-purple?style=flat-square" alt="Author"></a>
+  <a href="https://www.sambhavdwivedi.in"><img src="https://img.shields.io/badge/Author-Sambhav%20Dwivedi-purple?style=flat-square" alt="Author"></a>
   <a href="https://github.com/sambhavdwivediofficial"><img src="https://img.shields.io/badge/GitHub-sambhavdwivediofficial-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
 </p>
 
