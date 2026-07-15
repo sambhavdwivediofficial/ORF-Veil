@@ -1,9 +1,13 @@
 //! High-level client API tying together fragmentation, encryption,
 //! path selection, and circuit construction into a single `send` call.
 
+use std::sync::Arc;
+use std::time::Duration;
+
 use rand::rngs::OsRng;
 use thiserror::Error;
 use tokio::net::TcpStream;
+use tokio::task::JoinHandle;
 
 use veil_core::crypto::encrypt_cell;
 use veil_core::fragment_message;
@@ -12,6 +16,7 @@ use veil_routing::path_selection::select_path;
 use veil_routing::topology::Topology;
 use veil_routing::{build_circuit, CircuitError};
 
+use crate::cover_traffic;
 use crate::envelope;
 use crate::session::Session;
 
@@ -33,14 +38,14 @@ pub struct SentCircuit {
 }
 
 pub struct VeilClient {
-    topology: Topology,
+    topology: Arc<Topology>,
     hop_count: usize,
 }
 
 impl VeilClient {
     pub fn new(topology: Topology, hop_count: usize) -> Self {
         Self {
-            topology,
+            topology: Arc::new(topology),
             hop_count,
         }
     }
@@ -80,5 +85,23 @@ impl VeilClient {
         }
 
         Ok(sent)
+    }
+
+    /// Starts continuous background cover traffic: dummy cells sent
+    /// through freshly selected circuits at randomized intervals
+    /// within `[min_interval, max_interval)`, indistinguishable on
+    /// the wire from real sends. Call `.abort()` on the returned
+    /// handle to stop.
+    pub fn spawn_cover_traffic(
+        &self,
+        min_interval: Duration,
+        max_interval: Duration,
+    ) -> JoinHandle<()> {
+        cover_traffic::spawn(
+            self.topology.clone(),
+            self.hop_count,
+            min_interval,
+            max_interval,
+        )
     }
 }

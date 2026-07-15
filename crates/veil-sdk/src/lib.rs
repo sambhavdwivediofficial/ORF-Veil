@@ -2,6 +2,7 @@
 //! messages through the Veil relay fabric.
 
 pub mod client;
+pub mod cover_traffic;
 pub mod envelope;
 pub mod receiver;
 pub mod session;
