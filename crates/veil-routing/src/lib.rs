@@ -5,12 +5,15 @@
 pub mod dummy_traffic;
 pub mod path_selection;
 pub mod topology;
+pub mod topology_file;
 
 use thiserror::Error;
 
 use veil_relay::forwarding::{build_onion_layer, OnionError, OnionPayload};
 
 use crate::topology::RelayInfo;
+
+pub use topology_file::TopologyFileError;
 
 #[derive(Debug, Error)]
 pub enum CircuitError {
