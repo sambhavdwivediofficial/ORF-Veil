@@ -1,13 +1,15 @@
-# Brings up a 3-relay local network for manual testing:
+# Brings up a 3-relay network with persistent identities, reachable
+# from the host — for real, not just as a running-but-idle demo:
 #   cd docker && docker compose up --build
 #
-# Note: veil-cli currently spins up its own in-process relays for its
-# demo (see crates/veil-cli/src/main.rs) and does not yet load an
-# external topology file, so it cannot route through these containers
-# out of the box. This compose file proves the relays build, start,
-# and are network-reachable — wiring a client to an external topology
-# is tracked in ROADMAP.md.
-
+# Each relay publishes two ports: its main relay port (where circuits
+# are routed through) and its mailbox pull-listener port (main port +
+# 1000, matching veil-relay's convention — see
+# crates/veil-relay/src/pull_listener.rs). A host-side client loads
+# ../topology/local-docker.json (built from these same identities) and
+# talks to these containers directly — see
+# `cargo run -p veil-cli -- "message" --topology ../topology/local-docker.json`.
+ 
 services:
   relay1:
     build:
@@ -19,10 +21,11 @@ services:
       - ./config/relay1.toml:/app/config/relay1.toml:ro
     ports:
       - "9001:9001"
+      - "10001:10001"
     networks:
       - veil-net
     restart: unless-stopped
-
+ 
   relay2:
     build:
       context: ..
@@ -33,10 +36,11 @@ services:
       - ./config/relay2.toml:/app/config/relay2.toml:ro
     ports:
       - "9002:9001"
+      - "10002:10001"
     networks:
       - veil-net
     restart: unless-stopped
-
+ 
   relay3:
     build:
       context: ..
@@ -47,10 +51,11 @@ services:
       - ./config/relay3.toml:/app/config/relay3.toml:ro
     ports:
       - "9003:9001"
+      - "10003:10001"
     networks:
       - veil-net
     restart: unless-stopped
-
+ 
 networks:
   veil-net:
     driver: bridge

@@ -1,3 +1,4 @@
 listen_addr = "0.0.0.0:9001"
 relay_id = "relay-3"
+static_secret_hex = "41cdfb94d2c102e34f493a5d2d94e0dea35fac81ab4af6281543a43203dfa3de"
 max_connections = 256

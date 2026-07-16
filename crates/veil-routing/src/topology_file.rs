@@ -1,3 +1,21 @@
+//! Loading and saving a [`Topology`] as a JSON file.
+//!
+//! Everything else in this crate assumes a client already has a
+//! `Topology` in hand. This module is how it gets one without
+//! spawning the relays itself — e.g. a fixed set of relays running in
+//! Docker with persistent identities generated via
+//! `veil-relay-keygen` (see `docker/config/` and `topology/`).
+//!
+//! File format (version 1):
+//! ```json
+//! {
+//!   "version": 1,
+//!   "relays": [
+//!     { "id": "relay-1", "address": "127.0.0.1:9001", "public_key": "<64 hex chars>" }
+//!   ]
+//! }
+//! ```
+
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
