@@ -1,14 +1,18 @@
-# Brings up a 3-relay network with persistent identities, reachable
-# from the host — for real, not just as a running-but-idle demo:
-#   cd docker && docker compose up --build
+# Brings up a 3-relay network with persistent identities, plus an
+# on-demand client that runs *inside* the same Docker network so it
+# can resolve relay1/relay2/relay3 by Docker's internal service-name
+# DNS — this matters because container-to-container addressing and
+# host-to-container addressing are NOT the same thing. A relay inside
+# this network cannot reach another relay via "127.0.0.1:900X" (that
+# just loops back to itself); it needs the Docker service name. See
+# ../topology/local-docker.json, which uses those service names.
 #
-# Each relay publishes two ports: its main relay port (where circuits
-# are routed through) and its mailbox pull-listener port (main port +
-# 1000, matching veil-relay's convention — see
-# crates/veil-relay/src/pull_listener.rs). A host-side client loads
-# ../topology/local-docker.json (built from these same identities) and
-# talks to these containers directly — see
-# `cargo run -p veil-cli -- "message" --topology ../topology/local-docker.json`.
+# Bring up the relay fabric:
+#   cd docker && docker compose up -d
+#
+# Run the client against it (from anywhere, this launches its own
+# short-lived container on the same network):
+#   docker compose run --rm cli "your message" --topology /app/topology/local-docker.json
  
 services:
   relay1:
@@ -55,6 +59,21 @@ services:
     networks:
       - veil-net
     restart: unless-stopped
+ 
+  # One-off client: does not start with `docker compose up`, only via
+  # `docker compose run --rm cli ...` (the "tools" profile keeps it
+  # out of the default startup set, since it's meant to exit after
+  # sending, not run forever like the relays).
+  cli:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cli
+    volumes:
+      - ../topology:/app/topology:ro
+    networks:
+      - veil-net
+    profiles:
+      - tools
  
 networks:
   veil-net:

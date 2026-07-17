@@ -3,17 +3,17 @@
   "relays": [
     {
       "id": "relay-1",
-      "address": "127.0.0.1:9001",
+      "address": "relay1:9001",
       "public_key": "e4a61cfbc8c2cdd3640613298d796923ce2bef540a2205b9aaca643205769b52"
     },
     {
       "id": "relay-2",
-      "address": "127.0.0.1:9002",
+      "address": "relay2:9001",
       "public_key": "fd151637266499d579be57127abd896aff14e6fa5c63368ac601f1f3f50cee17"
     },
     {
       "id": "relay-3",
-      "address": "127.0.0.1:9003",
+      "address": "relay3:9001",
       "public_key": "7d4265bc0f6f338ca7eeb3eb74807ae79781558e17b1e3ebee63c75ccf1b0d45"
     }
   ]
