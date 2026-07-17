@@ -176,27 +176,6 @@ fn mailbox_address_from(addr: &str) -> String {
     format!("{host}:{}", port + 1000)
 }
 
-#[cfg(test)]
-mod unit_tests {
-    use super::*;
-
-    #[test]
-    fn works_with_a_literal_ip_address() {
-        assert_eq!(mailbox_address_from("127.0.0.1:9001"), "127.0.0.1:10001");
-    }
-
-    #[test]
-    fn works_with_a_dns_hostname_like_a_docker_service_name() {
-        assert_eq!(mailbox_address_from("relay2:9001"), "relay2:10001");
-    }
-
-    #[test]
-    #[should_panic(expected = "host:port form")]
-    fn panics_on_missing_port() {
-        mailbox_address_from("relay2");
-    }
-}
-
 /// Shared send/receive flow for both modes above: establishes a
 /// throwaway recipient identity, sends the message, then receives it
 /// back purely by polling relay mailboxes over the network — the same
@@ -245,5 +224,26 @@ async fn send_and_receive(
             "veil-cli: delivered payload = {:?}",
             String::from_utf8_lossy(cell.payload())
         );
+    }
+}
+
+#[cfg(test)]
+mod unit_tests {
+    use super::*;
+
+    #[test]
+    fn works_with_a_literal_ip_address() {
+        assert_eq!(mailbox_address_from("127.0.0.1:9001"), "127.0.0.1:10001");
+    }
+
+    #[test]
+    fn works_with_a_dns_hostname_like_a_docker_service_name() {
+        assert_eq!(mailbox_address_from("relay2:9001"), "relay2:10001");
+    }
+
+    #[test]
+    #[should_panic(expected = "host:port form")]
+    fn panics_on_missing_port() {
+        mailbox_address_from("relay2");
     }
 }
