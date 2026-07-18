@@ -7,6 +7,7 @@ pub struct Metrics {
     pub cells_forwarded: AtomicU64,
     pub cells_delivered: AtomicU64,
     pub decrypt_failures: AtomicU64,
+    pub connections_rejected: AtomicU64,
 }
 
 impl Metrics {
@@ -15,6 +16,7 @@ impl Metrics {
             cells_forwarded: self.cells_forwarded.load(Ordering::Relaxed),
             cells_delivered: self.cells_delivered.load(Ordering::Relaxed),
             decrypt_failures: self.decrypt_failures.load(Ordering::Relaxed),
+            connections_rejected: self.connections_rejected.load(Ordering::Relaxed),
         }
     }
 }
@@ -24,4 +26,5 @@ pub struct MetricsSnapshot {
     pub cells_forwarded: u64,
     pub cells_delivered: u64,
     pub decrypt_failures: u64,
+    pub connections_rejected: u64,
 }
