@@ -13,7 +13,7 @@
 use thiserror::Error;
 
 use veil_core::crypto::{decrypt_cell, KeyPair};
-use veil_core::Cell;
+use veil_core::{Cell, Reassembler};
 use veil_relay::pull_listener;
 
 use crate::envelope;
@@ -28,9 +28,8 @@ pub enum ReceiveError {
 /// among their queued deliveries that successfully decrypts under
 /// `identity`'s private key.
 ///
-/// This does not fragment/reassemble multi-cell messages that exited
-/// through different relays — see `ROADMAP.md`. Each returned `Cell`
-/// is one fragment.
+/// Returns individual cell fragments, not reassembled messages — use
+/// [`Receiver`] if a message may span more than one cell.
 pub async fn receive(
     identity: &KeyPair,
     mailbox_addrs: &[String],
@@ -59,4 +58,58 @@ pub async fn receive(
     }
 
     Ok(decrypted)
+}
+
+/// Stateful receiver that reassembles multi-cell messages across
+/// repeated polls.
+///
+/// Every cell of a message takes an independent, randomly chosen path
+/// (see `veil-sdk::client`), so different fragments of the same
+/// message can exit through different relays and arrive at different
+/// times. A single one-shot [`receive`] call cannot assume every
+/// fragment of a message has landed yet — `Receiver` keeps a
+/// [`Reassembler`] alive across calls to [`Receiver::poll`] so
+/// fragments accumulate, however many polls it takes, until a message
+/// is complete.
+pub struct Receiver {
+    identity: KeyPair,
+    reassembler: Reassembler,
+}
+
+impl Receiver {
+    pub fn new(identity: KeyPair) -> Self {
+        Self {
+            identity,
+            reassembler: Reassembler::new(),
+        }
+    }
+
+    /// Polls every relay in `mailbox_addrs` once, feeds any cells
+    /// addressed to this identity into the internal reassembler, and
+    /// returns every message that is now complete — possibly using
+    /// fragments accumulated across earlier calls to this method.
+    ///
+    /// An empty result is not an error: it just means nothing
+    /// completed this round, either because nothing arrived or
+    /// because some fragments are still in transit on another relay.
+    pub async fn poll(&mut self, mailbox_addrs: &[String]) -> Result<Vec<Vec<u8>>, ReceiveError> {
+        let cells = receive(&self.identity, mailbox_addrs).await?;
+
+        let mut completed = Vec::new();
+        for cell in cells {
+            // A cell that fails to insert (e.g. a corrupted or
+            // adversarial mismatched message id) is simply dropped
+            // rather than aborting the whole poll.
+            if let Ok(Some(message)) = self.reassembler.insert(cell) {
+                completed.push(message);
+            }
+        }
+        Ok(completed)
+    }
+
+    /// Number of messages currently partially received and still
+    /// waiting on more fragments.
+    pub fn pending_count(&self) -> usize {
+        self.reassembler.pending_count()
+    }
 }
