@@ -8,5 +8,5 @@ pub mod receiver;
 pub mod session;
 
 pub use client::{ClientError, SentCircuit, VeilClient};
-pub use receiver::{receive, ReceiveError};
+pub use receiver::{receive, ReceiveError, Receiver};
 pub use session::Session;

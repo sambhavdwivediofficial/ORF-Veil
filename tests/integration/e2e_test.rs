@@ -282,3 +282,51 @@ async fn a_different_identity_receives_nothing() {
         "an identity the message wasn't addressed to should decrypt nothing"
     );
 }
+
+#[tokio::test]
+async fn multi_cell_message_reassembles_across_independent_paths() {
+    let (topology, mailbox_addrs) = spin_up_relays_with_mailboxes(21500, 3).await;
+
+    let recipient = KeyPair::generate(&mut OsRng);
+    let session = Session::establish(&recipient.public_key()).unwrap();
+
+    // Long enough to guarantee multiple 488-byte-capacity cells, each
+    // of which is routed through an independently chosen path and may
+    // exit through a different relay (see veil-sdk::client).
+    let long_message = b"Every fragment of this message takes its own random path through the fabric and may exit through a different relay before the receiver reassembles the original bytes back together correctly. "
+        .repeat(4);
+
+    let client = VeilClient::new(topology, 3);
+    let sent = client.send(&session, &long_message).await.unwrap();
+    assert!(
+        sent.len() > 1,
+        "message should have been split into multiple cells"
+    );
+
+    let mut receiver = receiver::Receiver::new(recipient);
+    let mut reassembled = Vec::new();
+
+    // Fragments may land on different relays at slightly different
+    // times, so poll a few times rather than assuming one pass sees
+    // everything.
+    for _ in 0..20 {
+        let completed = receiver.poll(&mailbox_addrs).await.unwrap();
+        reassembled.extend(completed);
+        if !reassembled.is_empty() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+
+    assert_eq!(
+        reassembled.len(),
+        1,
+        "exactly one message should have completed"
+    );
+    assert_eq!(reassembled[0], long_message);
+    assert_eq!(
+        receiver.pending_count(),
+        0,
+        "nothing should be left incomplete"
+    );
+}
