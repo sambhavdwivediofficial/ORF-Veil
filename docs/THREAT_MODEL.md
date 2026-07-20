@@ -57,44 +57,51 @@ below).
   real or dummy, are exactly 512 bytes before encryption. A relay cannot
   distinguish a one-byte message from a near-maximum one by cell size
   alone.
+- **Relay identity spoofing across restarts.** A relay's identity is a
+  persisted X25519 keypair (`static_secret_hex`, generated via
+  `veil-relay-keygen`), not a fresh ephemeral one on every startup. A
+  client that has recorded a relay's public key can detect if that
+  relay's identity changes unexpectedly between runs.
 
 ---
 
 ## What Veil does **not** yet protect against (honest v1 gaps)
 
-- **Cell-count-based size inference.** While a single cell's size is
-  fixed, the *number* of cells a message requires is still visible to
-  anyone who can count cells associated with the same circuit or
-  timeframe. Cover traffic (dummy cells) is implemented
-  (`veil-routing::dummy_traffic::DummyTrafficGenerator`) but is **not
-  currently invoked on any running schedule** by the relay or client — so
-  in the current running system, cell-count leakage is not yet mitigated
-  in practice, only in library code that is not yet wired up.
-- **Timing correlation.** A global or well-positioned passive observer
-  who can see traffic entering and leaving the fabric may correlate
-  send/receive timing to link sender and receiver, especially in the
-  absence of active cover traffic (see above). This is the classic
-  end-to-end timing correlation attack that all low-latency mixnets and
-  onion-routing systems (including Tor) face to varying degrees; Veil is
-  not different in kind here, and has not implemented the timing
-  defenses (e.g. scheduled dummy traffic, batching/mixing delay) needed
-  to meaningfully raise the cost of this attack yet.
+- **Cell-count-based size inference, unless cover traffic is enabled.**
+  A single cell's size is fixed, but the *number* of cells a message
+  requires is still visible to anyone who can count cells on the same
+  circuit or timeframe. `VeilClient::spawn_cover_traffic`
+  (`veil-sdk::cover_traffic`) sends dummy cells — cryptographically
+  indistinguishable from real ones — through randomly selected circuits
+  at randomized intervals, but it is **opt-in and not started
+  automatically** by the client or relay. An application that never
+  calls it gets no cell-count protection in practice, even though the
+  mechanism exists and is tested.
+- **Timing correlation, for the same reason.** A global or
+  well-positioned passive observer who can see traffic entering and
+  leaving the fabric may correlate send/receive timing to link sender
+  and receiver, especially when cover traffic is not running. This is
+  the classic end-to-end timing correlation attack that all low-latency
+  mixnets and onion-routing systems (including Tor) face to varying
+  degrees; enabling cover traffic raises the cost of this attack but
+  does not eliminate it, and Veil has not implemented additional timing
+  defenses such as batching or mixing delay.
 - **Circuit-position inference from packet size.** Onion layer size
   currently grows with hop depth rather than being padded to a constant
   size (see `PROTOCOL_SPEC.md` §5). A relay-to-relay observer may be able
   to estimate a cell's approximate position in its circuit from this size
-  delta.
-- **Relay identity persistence.** Relays generate an ephemeral keypair
-  on every startup; there is no persisted long-term identity yet. This
-  means there is currently no way to build trust or reputation in a
-  specific relay over time, and no protection against a relay's identity
-  changing silently between runs.
+  delta. See `ROADMAP.md` — this is deliberately deferred, not merely
+  unscheduled, because a rushed fix here would be worse than the honest
+  current gap.
 - **Sybil / malicious topology injection.** Path selection
   (`veil-routing::path_selection::select_path`) trusts whatever
-  `Topology` it is given. There is no mechanism yet to detect or resist
-  an adversary who controls a disproportionate share of relays in a
-  client's topology — full N-1 colluding-relay compromise is possible if
-  an attacker controls every relay in a selected path.
+  `Topology` it is given, whether built from a static file
+  (`topology_file`) or from live discovery
+  (`veil-routing::discovery::discover_topology`). Discovery makes it
+  *easier* to add relays to a topology, which does not by itself make
+  the topology more trustworthy — there is still no mechanism to detect
+  or resist an adversary who controls a disproportionate share of
+  relays a client is configured to route through.
 - **First/last hop exposure to relay operators.** The entry relay always
   learns the sender's real network address (it accepts the sender's
   direct TCP connection); the exit relay always learns the destination
@@ -116,8 +123,12 @@ below).
   unlimited resources. Veil aims to raise the cost of traffic analysis
   substantially, not to provide theoretical unconditional anonymity
   against an unbounded adversary.
-- **Denial of service.** Nothing here rate-limits or defends relays
-  against flooding, resource exhaustion, or availability attacks.
+- **Denial of service, beyond basic connection limits.** Each relay
+  enforces `max_connections` (a semaphore-bounded cap on concurrent
+  inbound connections, rejecting new ones immediately once full — see
+  `veil-relay::node`), which limits one specific resource-exhaustion
+  vector. Nothing here defends against bandwidth flooding, per-connection
+  request flooding, or other availability attacks.
 - **Anonymity of relay operators.** Running a relay does not itself hide
   the fact that you are running a relay, or protect the relay operator's
   own identity.
