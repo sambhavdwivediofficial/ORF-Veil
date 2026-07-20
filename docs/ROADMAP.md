@@ -8,7 +8,7 @@ present as unused library code).
 
 ---
 
-## v0.1 — Core fabric (current)
+## v0.1 — Core fabric
 
 The cryptographic core, relay forwarding, circuit construction, and a
 working send path exist and are tested end-to-end over real sockets.
@@ -25,37 +25,77 @@ working send path exist and are tested end-to-end over real sockets.
 
 ## v0.2 — Close the honest gaps in the threat model
 
-Everything here is tracked against a specific, named gap in
-[`THREAT_MODEL.md`](THREAT_MODEL.md) — this phase is about making the
+Everything here was tracked against a specific, named gap in
+[`THREAT_MODEL.md`](THREAT_MODEL.md) — this phase was about making the
 system's actual behavior match its stated privacy properties, not adding
-new features.
+unrelated new features.
 
-- [ ] Wire up scheduled dummy/cover traffic on running relays (the
-      generator exists in `veil-routing::dummy_traffic`; nothing calls it
-      on a schedule yet)
+- [x] Persistent relay identity: `static_secret_hex` loading, plus
+      `veil-relay-keygen` to generate one (`veil-relay::main`,
+      `veil-core::crypto::KeyPair::{to_hex, from_hex}`)
+- [x] Receiving client: a genuinely separate process can pull delivered
+      cells from a relay's mailbox over the network
+      (`veil-relay::pull_listener`, `veil-sdk::receiver`), rather than
+      only observing delivery in-process
+- [x] Sender-identity envelope: the sender's ephemeral public key now
+      travels with the delivered cell (`veil-sdk::envelope`), which the
+      receiving-client work above depends on — without it, a genuinely
+      separate recipient process had no way to learn which key to
+      derive
+- [x] Cover traffic: `VeilClient::spawn_cover_traffic` sends dummy
+      cells through freshly selected circuits at randomized intervals,
+      wrapped identically to real sends (`veil-sdk::cover_traffic`,
+      building on the generator in `veil-routing::dummy_traffic`)
 - [ ] Fixed-size (Sphinx-style) onion layer padding, so cell size no
-      longer correlates with circuit depth
-- [ ] Persistent relay identity (implement `static_secret_hex` loading,
-      currently a stub in `veil-relay::main`)
-- [ ] Receiving client: a way for a separate process to pull delivered
-      cells from an exit relay over the network, rather than only
-      observing delivery in-process
+      longer correlates with circuit depth — deliberately deferred, see
+      "Explicitly deferred" below
 
 ## v0.3 — Real deployment shape
 
-- [ ] Multi-cell message reassembly on the receiving side, across cells
-      that may exit through different relays
-- [ ] Topology discovery / distribution — a way for a client to learn
-      about relays it doesn't already have hardcoded, rather than being
-      constructed with a fixed `Topology`
+- [x] Multi-cell message reassembly on the receiving side: `veil-sdk::Receiver`
+      keeps a `Reassembler` alive across repeated polls, so fragments
+      that exit through different relays at different times still
+      recombine into the original message
+- [x] Topology discovery: relays answer a DESCRIBE request with their
+      own id, public key, and address (`veil-relay::pull_listener::describe`,
+      `veil-routing::discovery::discover_topology`), so a client can
+      build a `Topology` from nothing but a list of addresses instead
+      of needing every public key copied in by hand
+- [x] External topology loading from a JSON file
+      (`veil-routing::topology_file`), and a full Docker Compose
+      deployment that a client can actually route through — including
+      a dockerized client service that resolves relays via Docker's
+      internal DNS (`docker/docker-compose.yml`)
+- [x] Connection rate limiting on relays: `max_connections` is now
+      enforced via a semaphore at accept time, with rejections tracked
+      in relay metrics (`veil-relay::node`)
 - [ ] QUIC transport between relays (currently plain TCP; see
-      `ARCHITECTURE.md`)
-- [ ] Basic connection/request rate limiting on relays (`max_connections`
-      is currently parsed from config but not enforced)
-- [ ] `docker-compose` demo network wired to an actual client (currently
-      the compose file starts real, reachable relay containers, but
-      `veil-cli` only knows how to talk to relays it spins up itself —
-      see the note in `docker/docker-compose.yml`)
+      `ARCHITECTURE.md`) — deferred, see below
+
+## Explicitly deferred (not forgotten, deliberately postponed)
+
+These aren't "later, maybe" items — they're gaps that were evaluated
+and deliberately not attempted yet, because doing them carelessly would
+be worse than the current, honestly-documented gap:
+
+- **Sphinx-style fixed-size padding.** A naive version of this (every
+  onion layer padded to one constant size) is mathematically
+  impossible with simple recursive nesting — an outer layer would need
+  capacity to hold a same-size copy of itself, which has no solution.
+  Real Sphinx solves this with a fixed maximum packet size and a
+  PRG-derived filler scheme that reclaims header space as layers are
+  peeled, which is a real cryptographic protocol design effort, not a
+  quick patch. Attempting a shortcut version risks shipping something
+  that *looks* fixed-size without actually closing the leak — worse
+  than the current documented gap, because it would create false
+  confidence.
+- **QUIC transport.** Would mean rewriting the relay networking layer
+  (`node.rs`, `forwarding.rs`) and adding TLS certificate handling —
+  a large, high-blast-radius change against code that is currently
+  fully tested and working over TCP.
+- **NAT traversal.** A separate research area (STUN/TURN, hole
+  punching) or reliance on relay operators port-forwarding — out of
+  scope until the rest of the protocol is more mature.
 
 ## Later / exploratory
 
@@ -64,7 +104,6 @@ implementation-ready, and are listed here so they aren't forgotten, not
 because they're imminent.
 
 - [ ] Sybil-resistant or reputation-weighted relay selection
-- [ ] NAT traversal for relays not on a public IP
 - [ ] Mobile/desktop client integration
 - [ ] Independent security review
 
