@@ -23,7 +23,7 @@ use veil_core::crypto::KeyPair;
 use veil_relay::config::RelayConfig;
 use veil_relay::mailbox::Mailbox;
 use veil_relay::node::RelayNode;
-use veil_relay::pull_listener;
+use veil_relay::pull_listener::{self, RelayIdentity};
 use veil_routing::topology::{RelayInfo, Topology};
 use veil_sdk::{receiver, Session, VeilClient};
 
@@ -110,10 +110,16 @@ async fn run_self_hosted(message: String, hop_count: usize) {
         mailbox_addr.set_port(mailbox_addr.port() + 1000);
         mailbox_addrs.push(mailbox_addr.to_string());
 
+        let identity = RelayIdentity {
+            id: relay_id.clone(),
+            public_key,
+            main_addr: addr.to_string(),
+        };
+
         let mailbox = Mailbox::new();
         let listener_mailbox = mailbox.clone();
         tokio::spawn(async move {
-            let _ = pull_listener::serve(mailbox_addr, listener_mailbox).await;
+            let _ = pull_listener::serve(mailbox_addr, listener_mailbox, identity).await;
         });
         tokio::spawn(async move {
             while let Some(delivered) = delivery_rx.recv().await {

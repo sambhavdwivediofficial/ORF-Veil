@@ -1,3 +1,5 @@
+//! `veil-relay` binary entry point.
+
 use std::env;
 use std::time::Duration;
 
@@ -8,7 +10,7 @@ use veil_core::crypto::KeyPair;
 use veil_relay::config::RelayConfig;
 use veil_relay::mailbox::Mailbox;
 use veil_relay::node::RelayNode;
-use veil_relay::pull_listener;
+use veil_relay::pull_listener::{self, RelayIdentity};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -37,6 +39,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut mailbox_addr = config.listen_addr;
     mailbox_addr.set_port(mailbox_addr.port() + 1000);
 
+    let identity = RelayIdentity {
+        id: config.relay_id.clone(),
+        public_key: keypair.public_key(),
+        main_addr: config.listen_addr.to_string(),
+    };
+
     let (node, mut delivery_rx) = RelayNode::new(config, keypair);
 
     let metrics_node = node.clone();
@@ -53,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let listener_mailbox = mailbox.clone();
     tokio::spawn(async move {
-        if let Err(e) = pull_listener::serve(mailbox_addr, listener_mailbox).await {
+        if let Err(e) = pull_listener::serve(mailbox_addr, listener_mailbox, identity).await {
             tracing::error!(error = %e, "mailbox pull listener stopped");
         }
     });

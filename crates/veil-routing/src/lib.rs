@@ -2,6 +2,7 @@
 //! onion-layer primitives in `veil-relay` to produce a fully wrapped
 //! packet ready to hand to the first hop.
 
+pub mod discovery;
 pub mod dummy_traffic;
 pub mod path_selection;
 pub mod topology;
