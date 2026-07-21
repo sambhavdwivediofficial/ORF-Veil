@@ -12,7 +12,7 @@ use tokio::task::JoinHandle;
 use veil_core::crypto::encrypt_cell;
 use veil_core::fragment_message;
 use veil_relay::forwarding::write_frame;
-use veil_routing::path_selection::select_path;
+use veil_routing::path_selection::select_diverse_path;
 use veil_routing::topology::Topology;
 use veil_routing::{build_circuit, CircuitError};
 
@@ -71,7 +71,7 @@ impl VeilClient {
             let encrypted = encrypt_cell(&session.cell_key, &cell)?;
             let enveloped = envelope::wrap(&session.public_key(), &encrypted);
 
-            let path = select_path(&self.topology, self.hop_count, &mut rng)
+            let path = select_diverse_path(&self.topology, self.hop_count, &mut rng)
                 .map_err(CircuitError::PathSelection)?;
             let onion = build_circuit(&path, enveloped.to_vec())?;
 

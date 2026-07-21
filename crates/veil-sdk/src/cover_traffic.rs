@@ -21,7 +21,7 @@ use veil_core::crypto::encrypt_cell;
 use veil_relay::forwarding::write_frame;
 use veil_routing::build_circuit;
 use veil_routing::dummy_traffic::DummyTrafficGenerator;
-use veil_routing::path_selection::select_path;
+use veil_routing::path_selection::select_diverse_path;
 use veil_routing::topology::Topology;
 
 use crate::envelope;
@@ -56,7 +56,7 @@ pub fn spawn(
             rng.fill_bytes(&mut fake_sender_bytes);
             let enveloped = envelope::wrap(&PublicKey::from(fake_sender_bytes), &encrypted);
 
-            let Ok(path) = select_path(&topology, hop_count, &mut rng) else {
+            let Ok(path) = select_diverse_path(&topology, hop_count, &mut rng) else {
                 continue;
             };
             let Ok(onion) = build_circuit(&path, enveloped.to_vec()) else {
